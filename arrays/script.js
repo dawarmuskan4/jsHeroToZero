@@ -61,10 +61,45 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount')
 const inputCloseUsername = document.querySelector('.form__input--user')
 const inputClosePin = document.querySelector('.form__input--pin')
 
-/////////////////////////////////////////////////
+const displayMovements = function (movements) {
+  containerMovements.innerHTML = ''
+  movements.forEach(function (mov, i) {
+    const type = mov > 0 ? 'deposit' : 'withdrawal'
+    const html = `
+      <div class="movements__row">
+        <div class="movements__type movements__type--${type}">${i + 1}</div>
+        <div class="movements__date">3 days ago</div>
+        <div class="movements__value">${mov}€</div>
+      </div>
+    `
+
+    containerMovements.insertAdjacentHTML('afterbegin', html)
+  })
+}
+displayMovements(account1.movements)
+
+const calcDisplayBalance = function (movements) {
+  const balance = movements.reduce((acc, mov) => acc + mov, 0)
+  labelBalance.textContent = `${balance}EUR`
+}
+calcDisplayBalance(account1.movements)
+
+const createUsernames = function (accs) {
+  accs.forEach(function (acc) {
+    acc.username = acc.owner
+      .toLowerCase()
+      .split(' ')
+      .map(name => name[0])
+      .join('')
+  })
+}
+createUsernames(accounts)
+
+//////
+///////////////////////////////////////////
 /////////////////////////////////////////////////
 // LECTURES
-
+const movements = [200, 450, -400, 3000, -650, -130, 70, 1300]
 /*
 let arr = ['a', 'b', 'c', 'd', 'e']
 
@@ -146,4 +181,120 @@ console.log(currenciesUnique)
 currenciesUnique.forEach(function (value, key, map) {
   console.log(`${key}: ${value}`)
 })
+
+
+//CODING CHALLENGE
+const jData1 = [3, 5, 2, 12, 7]
+const kData1 = [4, 1, 15, 8, 3]
+let jNewData1 = jData1.splice(1)
+console.log(jNewData1)
+jNewData1 = jNewData1.splice(1, 2)
+console.log(jNewData1)
+
+const ages1 = jNewData1.concat(kData1)
+ages1.forEach(function (age, i, ages1) {
+  if (age > 3) {
+    console.log(`Dog number ${i} is a adult and is ${age} years old`)
+  } else {
+    console.log(`Dog number ${i} is still a puppy and is ${age} years old`)
+  }
+})
+
+const jData2 = [9, 16, 6, 8, 3]
+const kData2 = [10, 5, 6, 1, 4]
+let jNewData2 = jData2.splice(1)
+console.log(jNewData2)
+jNewData2 = jNewData2.splice(1, 2)
+console.log(jNewData2)
+
+const ages2 = jNewData2.concat(kData2)
+
+ages2.forEach(function (age, i, ages2) {
+  if (age > 3) {
+    console.log(`Dog number ${i} is a adult and is ${age} years old`)
+  } else {
+    console.log(`Dog number ${i} is still a puppy and is ${age} years old`)
+  }
+})
+
+//better way of writing the same functions
+const checkDogs = function (dogsJulia, dogsKate) {
+  const dogsJuliaCorrected = dogs.Julia.slice()
+  dogsJuliaCorrected.splice(0, 1)
+  dogsJuliaCorrected.splice(-2)
+
+  const dogs = dogsJuliaCorrected.concat(dogsKate)
+  dogs.forEach(function (dog, i) {
+    if (dog >= 3) {
+      console.log(`Dog number ${i} is a adult and is ${dog} years old`)
+    } else {
+      console.log(`Dog number ${i} is still a puppy and is ${dog} years old`)
+    }
+  })
+}
+checkDogs(jNewData1, kData1)
+checkDogs(jNewData2, kData2)
+
+//Map
+
+const eurToUsd = 1.1
+const movementsUSD = movements.map(mov => mov * eurToUsd)
+console.log(movements)
+console.log(movementsUSD)
+
+const movementsUSDfor = []
+for (const mov of movements) movementsUSDfor.push(mov * eurToUsd)
+console.log(movementsUSDfor)
+
+const movementsDescriptions = movements.map((mov, i) => {
+  ;`Movement ${i + 1}: You ${mov > 0 ? 'deposited' : 'withdrew'} ${Math.abs(
+    mov
+  )}`
+})
+console.log(movementsDescriptions)
+
+
+//FILTER 
+const deposits = movements.filter(function (mov) {
+  return mov > 0
+})
+console.log('\n DEPOSITS')
+console.log(movements)
+console.log(deposits)
+const depositsFor = []
+for (const mov of movements) if (mov > 0) depositsFor.push(mov)
+console.log(depositsFor)
+
+const withdrawal = movements.filter(function (mov) {
+  return mov < 0
+})
+console.log('\n WITHDRAWALS')
+console.log(movements)
+console.log(withdrawal)
+const withdrawalFor = []
+for (const mov of movements) if (mov < 0) withdrawalFor.push(mov)
+console.log(withdrawalFor)
 */
+
+//REDUCE METHOD
+console.log(movements)
+// const balance = movements.reduce(function (acc, cur, i, arr) {
+//   console.log(`Iteration ${i}; ${acc}`)
+//   return acc + cur
+// }, 0)
+const balance = movements.reduce((acc, cur) => acc + cur, 0)
+console.log(balance)
+
+let sum = 0
+for (const mov of movements) sum += mov
+console.log(sum)
+
+//Maximum value
+const max = movements.reduce((acc, mov) => {
+  if (acc > mov) {
+    return acc
+  } else {
+    return mov
+  }
+}, movements[0])
+console.log(max)
