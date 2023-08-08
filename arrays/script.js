@@ -61,8 +61,11 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount')
 const inputCloseUsername = document.querySelector('.form__input--user')
 const inputClosePin = document.querySelector('.form__input--pin')
 
-const displayMovements = function (movements) {
+const displayMovements = function (movements, sort = false) {
   containerMovements.innerHTML = ''
+
+  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements
+
   movements.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal'
     const html = `
@@ -202,6 +205,13 @@ btnClose.addEventListener('click', function (e) {
     containerApp.style.opacity = 0
   }
   inputCloseUsername.value = inputClosePin.value = ''
+})
+
+let sorted = false
+btnSort.addEventListener('click', function (e) {
+  e.preventDefault()
+  displayMovements(currentAccount.movements, !sorted)
+  sorted = !sorted
 })
 
 //////
@@ -475,10 +485,38 @@ const arr = [[1, 2, 3], [4, 5, 6], 7, 8]
 console.log(arr.flat())
 const arrDeep = [[[1, 2], 3], [4, [5, 6]], 7, 8]
 console.log(arrDeep.flat(2))
-*/
 
+
+//Flat
 const overalBalance = accounts
   .map(acc => acc.movements)
   .flat()
   .reduce((acc, cur) => acc + cur, 0)
 console.log(overalBalance)
+
+//flatMap
+const overallBalance = accounts
+  .flatMap(acc => acc.movements)
+  .reduce((acc, cur) => acc + cur, 0)
+console.log(overallBalance)
+
+
+const owners = ['Jonas', 'Zach', 'Adam', 'Martha']
+console.log(owners.sort())
+console.log(owners)
+
+console.log(movements)
+//return < 0, a, b (keep the same order)
+// return > 0, a,b (switch order)
+// movements.sort((a, b) => {
+//   if (a > b) return 1
+//   if (b > a) return -1
+// })
+movements.sort((a, b) => a - b)
+console.log(movements)
+*/
+const x = new Array(7)
+console.log(x)
+x.fill(1)
+x.fill(1, 3, 5)
+console.log(x)
