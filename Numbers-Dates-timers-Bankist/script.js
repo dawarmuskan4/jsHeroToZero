@@ -71,21 +71,49 @@ const inputCloseUsername = document.querySelector('.form__input--user')
 const inputClosePin = document.querySelector('.form__input--pin')
 
 // Functions
+const formatMovementDate = function (date, locale) {
+  const calcDaysPassed = (date1, date2) => {
+    Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24))
+  }
+  const daysPassed = calcDaysPassed(new Date(), date)
 
-const displayMovements = function (movements, sort = false) {
+  if (daysPassed === 0) return 'Today'
+  if (daysPassed === 1) return 'Yesterday'
+  if (daysPassed <= 7) return `${daysPassed} days ago`
+
+  // const day = `${date.getDate()}`.padStart(2, 0)
+  // const month = `${date.getMonth() + 1}`.padStart(2, 0)
+  // const year = date.getFullYear()
+
+  return new Intl.DateTimeFormat(locale).format(date)
+}
+
+const formatCur = function (value, locale, currency) {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency,
+  }).format(value)
+}
+
+const displayMovements = function (acc, sort = false) {
   containerMovements.innerHTML = ''
 
-  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements
+  const movs = sort
+    ? acc.movements.slice().sort((a, b) => a - b)
+    : acc.movements
 
   movs.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal'
-
+    const date = new Date(acc.movementsDates[i])
+    const displayDate = formatMovementDate(date, acc.locale)
+    const formattedMov = formatCur(mov, acc.locale, acc.currency)
     const html = `
       <div class="movements__row">
         <div class="movements__type movements__type--${type}">${
       i + 1
     } ${type}</div>
-        <div class="movements__value">${mov.toFixed(2)}€</div>
+    <div class="movements__date">${displayDate}</div>
+        <div class="movements__value">${formattedMov}</div>
       </div>
     `
 
@@ -95,19 +123,19 @@ const displayMovements = function (movements, sort = false) {
 
 const calcDisplayBalance = function (acc) {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0)
-  labelBalance.textContent = `${acc.balance.toFixed(2)}€`
+  labelBalance.textContent = formatCur(acc.balance, acc.locale, acc.currency)
 }
 
 const calcDisplaySummary = function (acc) {
   const incomes = acc.movements
     .filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0)
-  labelSumIn.textContent = `${incomes.toFixed(2)}€`
+  labelSumIn.textContent = formatCur(incomes, acc.locale, acc.currency)
 
   const out = acc.movements
     .filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0)
-  labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€`
+  labelSumOut.textContent = formatCur(Math.abs(out), acc.locale, acc.currency)
 
   const interest = acc.movements
     .filter(mov => mov > 0)
@@ -117,7 +145,7 @@ const calcDisplaySummary = function (acc) {
       return int >= 1
     })
     .reduce((acc, int) => acc + int, 0)
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`
+  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency)
 }
 
 const createUsernames = function (accs) {
@@ -133,7 +161,7 @@ createUsernames(accounts)
 
 const updateUI = function (acc) {
   // Display movements
-  displayMovements(acc.movements)
+  displayMovements(acc)
 
   // Display balance
   calcDisplayBalance(acc)
@@ -142,8 +170,34 @@ const updateUI = function (acc) {
   calcDisplaySummary(acc)
 }
 
+const startLogOutTimer = function () {
+  const tick = function () {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0)
+    const sec = String(Math.trunc(time % 60)).padStart(2, 0)
+
+    //in each call, print the remaining time
+    labelTimer.textContent = `${min}:${sec}`
+
+    //when 0 seconds, stop the timer and log out user
+    if (time === 0) {
+      clearInterval(timer)
+      labelWelcome.textContent = 'Log in to get started'
+      containerApp.textContent.opacity = 0
+    }
+    //decrease 1s
+    time--
+  }
+  //set time to 5 minutes
+  let time = 300
+
+  //call the timer evry second
+  tick()
+  const timer = setInterval(tick, 1000)
+  return timer
+}
+
 // Event handlers
-let currentAccount
+let currentAccount, timer
 
 btnLogin.addEventListener('click', function (e) {
   // Prevent form from submitting
@@ -161,10 +215,36 @@ btnLogin.addEventListener('click', function (e) {
     }`
     containerApp.style.opacity = 100
 
+    //Create current date and time
+    const now = new Date()
+    const options = {
+      hour: 'numeric',
+      minute: 'numeric',
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
+    }
+    // const locale = navigator.language
+    labelDate.textContent = new Intl.DateTimeFormat(
+      currentAccount.locale,
+      options
+    ).format(now)
+
+    // const now = new Date()
+    // const day = `${now.getDay()}`.padStart(2, 0)
+    // const month = `${now.getMonth()}`.padStart(2, 0)
+    // const year = `${now.getFullYear()}`
+    // const hour = `${now.getHours()}`.padStart(2, 0)
+    // const min = `${now.getMinutes()}`.padStart(2, 0)
+    // labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`
+
     // Clear input fields
     inputLoginUsername.value = inputLoginPin.value = ''
     inputLoginPin.blur()
 
+    //TImer
+    if (timer) clearInterval(timer)
+    timer = startLogOutTimer()
     // Update UI
     updateUI(currentAccount)
   }
@@ -188,8 +268,16 @@ btnTransfer.addEventListener('click', function (e) {
     currentAccount.movements.push(-amount)
     receiverAcc.movements.push(amount)
 
+    //Add transfer date
+    currentAccount.movementsDates.push(new Date().toISOString())
+    receiverAcc.movementsDates.push(new Date().toISOString())
+
     // Update UI
     updateUI(currentAccount)
+
+    //Reset timer
+    clearInterval(timer)
+    timer = startLogOutTimer()
   }
 })
 
@@ -198,13 +286,22 @@ btnLoan.addEventListener('click', function (e) {
 
   const amount = Math.floor(inputLoanAmount.value)
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
-    // Add movement
-    currentAccount.movements.push(amount)
+    setTimeout(function () {
+      // Add movement
+      currentAccount.movements.push(amount)
 
-    // Update UI
-    updateUI(currentAccount)
+      //Add loan date
+      currentAccount.movementsDates.push(new Date().toISOString())
+
+      // Update UI
+      updateUI(currentAccount)
+    }, 2500)
   }
   inputLoanAmount.value = ''
+
+  //Reset timer
+  clearInterval(timer)
+  timer = startLogOutTimer()
 })
 
 btnClose.addEventListener('click', function (e) {
@@ -229,7 +326,7 @@ btnClose.addEventListener('click', function (e) {
 let sorted = false
 btnSort.addEventListener('click', function (e) {
   e.preventDefault()
-  displayMovements(currentAccount.movements, !sorted)
+  displayMovements(currentAccount, !sorted)
   sorted = !sorted
 })
 
@@ -322,7 +419,7 @@ labelBalance.addEventListener('click', function () {
     //if (i % 3 === 0) row.style.backgroundColor = 'blue'
   })
 })
-*/
+
 
 //Create a date
 const now = new Date()
@@ -331,3 +428,26 @@ console.log(new Date('Aug 08 2023 20:13:0'))
 console.log(new Date('December 23, 2001'))
 console.log(new Date(account1.movementsDates[0]))
 console.log(new Date(2037, 10, 19, 15, 23, 5))
+
+
+//set Timeout
+const ingredients = ['olives', 'spinach']
+const pizzaa = setTimeout(
+  (ing1, ing2) => {
+    console.log(`Here is your pizza with ${ing1} and ${ing2} 🍕`)
+  },
+  3000,
+  ...ingredients
+)
+console.log('Waiting for my pizza..')
+if (ingredients.includes('spinach')) clearTimeout(pizzaa)
+
+//set Interval
+setInterval(() => {
+  const now = new Date()
+  const hour = now.getHours()
+  const min = now.getMinutes()
+  const sec = now.getSeconds()
+  console.log(`${hour}:${min}:${sec}`)
+}, 1000)
+*/
