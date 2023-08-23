@@ -34,7 +34,7 @@ const renderCountry = function (data, className = '') {
 
 const renderError = function (msg) {
   countriesContainer.insertAdjacentText('beforeend', msg)
-  //countriesContainer.style.opacity = 1
+  countriesContainer.style.opacity = 1
 }
 
 /*
@@ -142,3 +142,30 @@ const getCountryData = function (country) {
 btn.addEventListener('click', function () {
   getCountryData('australia')
 })
+
+/////////////////////////
+//CODING CHALLENGE #1
+const whereAmI = function (lat, lng) {
+  fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`)
+    .then(res => {
+      if (!res.ok) throw new Error(`Problem with geocoding ${res.status}`)
+      return res.json()
+    })
+    .then(data => {
+      console.log(data)
+      console.log(`You are in ${data.city}, ${data.country}`)
+
+      return fetch(`https://restcountries.com/v3.1/name/${data.country}`)
+    })
+    .then(response => {
+      if (!response.ok)
+        throw new Error(`Country not found (${response.status})`)
+
+      return response.json()
+    })
+    .then(data => renderCountry(data[0], 'neighbour'))
+    .catch(err => console.error(`${err.message}`))
+}
+whereAmI(52.508, 13.381)
+// whereAmI(19.037, 72.873)
+// whereAmI(-33.933, 18.474)
