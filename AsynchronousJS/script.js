@@ -37,7 +37,6 @@ const renderError = function (msg) {
   countriesContainer.style.opacity = 1
 }
 
-/*
 const getCountryAndNeighbour = function (country) {
   //AJAX call country 1
   const request = new XMLHttpRequest()
@@ -67,12 +66,11 @@ const getCountryAndNeighbour = function (country) {
     })
   })
 }
-getCountryAndNeighbour('india')
-getCountryAndNeighbour('japan')
-
+//getCountryAndNeighbour('india')
+// getCountryAndNeighbour('japan')
 
 const req = fetch(`https://restcountries.com/v3.1/name/india`)
-console.log(req)
+// console.log(req)
 
 // const getCountryData = function (country) {
 //   fetch(`https://restcountries.com/v3.1/name/${country}`)
@@ -89,7 +87,7 @@ console.log(req)
 const getJSON = function (url, errorMsg = 'Something went wrong') {
   return fetch(url).then(response => {
     if (!response.ok) throw new Error(`${errorMsg} (${response.status})`)
-    response.json()
+    return response.json()
   })
 }
 
@@ -143,6 +141,7 @@ btn.addEventListener('click', function () {
   getCountryData('australia')
 })
 
+/*
 /////////////////////////
 //CODING CHALLENGE #1
 const whereAmI = function (lat, lng) {
@@ -210,7 +209,7 @@ wait(2)
   })
   .then(() => console.log('I waited for 1 second'))
 
-*/
+
 console.log('Getting position')
 const getPosition = function () {
   return new Promise(function (resolve, reject) {
@@ -250,22 +249,103 @@ getPosition().then(pos => console.log(pos))
 // btn.addEventListener('click', whereAmI)
 
 const whereAmI = async function (country) {
-  // const pos = await getPosition()
-  // const { latitude: lat, longitude: lng } = pos.coords
-  // const geo = await fetch(
-  //   `https://geocode.xyz/${lat},${lng}?geoit=xml&auth=14607661605899704367x710`
-  // )
-  // const datageo = await geo.json()
-  // console.log(datageo)
+  try {
+    // Geolocation
+    const pos = await getPosition()
+    const { latitude: lat, longitude: lng } = pos.coords
 
-  //fetch(`https://restcountries.com/v3.1/name/${country}`)
-  //.then(res => console.log(res))
+    // Reverse geocoding
+    const resGeo = await fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`)
+    if (!resGeo.ok) throw new Error('Problem getting location data')
 
-  const res = await fetch(`https://restcountries.com/v3.1/name/${country}`)
-  console.log(res)
-  const data = await res.json()
-  console.log(data)
-  renderCountry(data[0])
+    const dataGeo = await resGeo.json()
+    console.log('xxxx', dataGeo)
+
+    //fetch(`https://restcountries.com/v3.1/name/${country}`)
+    //.then(res => console.log(res))
+
+    const res = await fetch(`https://restcountries.com/v3.1/name/${country}`)
+    console.log(res)
+    const data = await res.json()
+    console.log(data)
+    renderCountry(data[0])
+  } catch (err) {
+    console.error(err)
+    renderError(`Something went wrong ❌ ${err.message}`)
+  }
 }
 whereAmI('india')
+whereAmI('portugal')
+whereAmI('usa')
 console.log('first')
+whereAmI().then(city => console.log(city))
+
+// try{
+//   let y = 1;
+//   const x = 2;
+//   x = 3;
+// } catch(err){
+//   alert(err.message)
+// }
+
+
+const get3countries = async function (c1, c2, c3) {
+  // try {
+  //   const [data1] = await getJSON(`https://restcountries.com/v3.1/name/${c1}`)
+  //   const [data2] = await getJSON(`https://restcountries.com/v3.1/name/${c2}`)
+  //   const [data3] = await getJSON(`https://restcountries.com/v3.1/name/${c3}`)
+  //   console.log([data1.capital, data2.capital, data3.capital])
+  // } catch (err) {
+  //   console.error(err)
+  // }
+
+  const data = await Promise.all([
+    getJSON(`https://restcountries.com/v3.1/name/${c1}`),
+    getJSON(`https://restcountries.com/v3.1/name/${c2}`),
+    getJSON(`https://restcountries.com/v3.1/name/${c3}`),
+  ])
+  console.log(data.map(d => d[0].capital))
+}
+get3countries('portugal', 'canada', 'india')
+
+*/
+
+//Promise.race
+const func = async function () {
+  const res = await Promise.race([
+    getJSON(`https://restcountries.com/v3.1/name/italy`),
+    getJSON(`https://restcountries.com/v3.1/name/egypt`),
+    getJSON(`https://restcountries.com/v3.1/name/mexico`),
+  ])
+  console.log(res[0])
+}
+//func()
+
+const timeout = function (s) {
+  return new Promise(function (_, reject) {
+    setTimeout(function () {
+      reject(new Error('Req took too long'), s * 1000)
+    })
+  })
+}
+Promise.race([getJSON(`https://restcountries.com/v3.1/name/india`), timeout(2)])
+  .then(res => console.log(res[0]))
+  .catch(err => console.error(err))
+
+//Promise.allSettled
+Promise.allSettled([
+  Promise.resolve('Success'),
+  Promise.reject('ERROR'),
+  Promise.resolve('Another Success'),
+])
+  .then(res => console.log(res))
+  .catch(err => console.error(err))
+
+//promise.any
+Promise.any([
+  Promise.resolve('Success'),
+  Promise.reject('ERROR'),
+  Promise.resolve('Another Success'),
+])
+  .then(res => console.log(res))
+  .catch(err => console.error(err))
